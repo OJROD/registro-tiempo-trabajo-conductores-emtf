@@ -54,7 +54,8 @@ function guardarRegistro() {
     // Guardar en localStorage
     localStorage.setItem('registros', JSON.stringify(registros));
     actualizarTabla();
-    document.getElementById('registroForm').reset();
+    // document.getElementById('registroForm').reset(); // Comentada para mantener los datos
+    actualizarCamposCalculados(); // Actualizar los campos calculados en el formulario
 }
 
 // Función para Día Libre
@@ -73,6 +74,12 @@ function diaLibre() {
     document.getElementById('numeroAutobus').value = '0';
     document.getElementById('totalViajeros').value = 0;
     document.getElementById('billetesVendidos').value = 0;
+
+    // Limpiar campos calculados
+    document.getElementById('tiempoTotalHoja').value = '';
+    document.getElementById('tiempoTotalOperativo').value = '';
+    document.getElementById('excesoMinutos').value = '';
+    document.getElementById('liquidacionTotal').value = '';
 }
 
 // Función para actualizar las tablas
@@ -316,7 +323,72 @@ function convertirAHorasMinutos(totalMinutos) {
     return `${pad(horas)}:${pad(minutos)}`;
 }
 
+// Función para actualizar los campos calculados en el formulario
+function actualizarCamposCalculados() {
+    // Obtener los valores actuales del formulario
+    const horaInicio = document.getElementById('horaInicio').value || '00:00';
+    const horaFin = document.getElementById('horaFin').value || '00:00';
+    const loginExp = document.getElementById('loginExp').value || '00:00';
+    const logoutExp = document.getElementById('logoutExp').value || '00:00';
+    const billetesVendidos = parseInt(document.getElementById('billetesVendidos').value) || 0;
+
+    // Recalcular los campos
+    const tiempoTotalHoja = calcularDiferenciaHoras(horaInicio, horaFin);
+    const tiempoTotalOperativo = calcularDiferenciaHoras(loginExp, logoutExp);
+    const excesoMinutos = calcularExcesoMinutos(horaFin, logoutExp);
+    const liquidacionTotal = (billetesVendidos * 1.30).toFixed(2);
+
+    // Actualizar los campos en el formulario
+    document.getElementById('tiempoTotalHoja').value = tiempoTotalHoja;
+    document.getElementById('tiempoTotalOperativo').value = tiempoTotalOperativo;
+    document.getElementById('excesoMinutos').value = excesoMinutos;
+    document.getElementById('liquidacionTotal').value = liquidacionTotal;
+}
+
 // Función para exportar a CSV
 function exportarCSV() {
-    // Implementación existente o ajustada si es necesario
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Fecha,Número de Conductor,Línea,Número de Turno,Hora Inicio Hoja,Hora Fin Hoja,Tiempo Total Hoja,Login Exp,Logout Exp,Tiempo Total Operativo,Exceso de Minutos,Número de Autobús,Número Total de Viajeros,Número de Billetes Vendidos,Liquidación Total (€),Observaciones\n";
+
+    // Ordenar registros antes de exportar (más reciente primero)
+    registros.sort((a, b) => {
+        const fechaA = new Date(a.fecha);
+        const fechaB = new Date(b.fecha);
+        return fechaB - fechaA;
+    });
+
+    registros.forEach(registro => {
+        const row = [
+            registro.fecha,
+            registro.numeroConductor,
+            registro.linea,
+            registro.numeroTurno,
+            registro.horaInicio,
+            registro.horaFin,
+            registro.tiempoTotalHoja,
+            registro.loginExp,
+            registro.logoutExp,
+            registro.tiempoTotalOperativo,
+            registro.excesoMinutos,
+            registro.numeroAutobus,
+            registro.totalViajeros,
+            registro.billetesVendidos,
+            registro.liquidacionTotal,
+            registro.observaciones
+        ].join(",");
+        csvContent += row + "\n";
+    });
+
+    const link = document.createElement("a");
+    link.setAttribute("href", encodeURI(csvContent));
+    link.setAttribute("download", "registros.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
+
+// Escuchar cambios en los campos relevantes para actualizar los cálculos en tiempo real (opcional)
+const camposParaEscuchar = ['horaInicio', 'horaFin', 'loginExp', 'logoutExp', 'billetesVendidos'];
+camposParaEscuchar.forEach(campoId => {
+    document.getElementById(campoId).addEventListener('input', actualizarCamposCalculados);
+});
