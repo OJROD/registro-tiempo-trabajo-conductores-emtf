@@ -39,6 +39,9 @@
             padding: 5px;
             box-sizing: border-box;
         }
+        input[readonly] {
+            background-color: #f0f0f0;
+        }
         .buttons {
             grid-column: span 4;
             text-align: center;
@@ -103,7 +106,6 @@
     <div class="container">
         <h1>Control de Tiempos Conductores EMT Fuenlabrada</h1>
         <form id="registroForm">
-            <!-- (Contenido del formulario) -->
             <!-- Fila 1 -->
             <label for="fecha">Fecha:</label>
             <input type="date" id="fecha" required>
@@ -143,6 +145,19 @@
             <label for="observaciones">Observaciones:</label>
             <textarea id="observaciones" rows="2"></textarea>
 
+            <!-- Campos de solo lectura para mostrar los cálculos -->
+            <label for="tiempoTotalHoja">Tiempo Total Hoja:</label>
+            <input type="text" id="tiempoTotalHoja" readonly>
+
+            <label for="tiempoTotalOperativo">Tiempo Total Operativo:</label>
+            <input type="text" id="tiempoTotalOperativo" readonly>
+
+            <label for="excesoMinutos">Exceso de Minutos:</label>
+            <input type="text" id="excesoMinutos" readonly>
+
+            <label for="liquidacionTotal">Liquidación Total (€):</label>
+            <input type="text" id="liquidacionTotal" readonly>
+
             <!-- Botones -->
             <div class="buttons">
                 <button type="button" id="guardarBtn">Guardar Registro</button>
@@ -156,39 +171,39 @@
         <div id="tablasMensuales"></div>
 
         <!-- Fila de Totales Anuales -->
-       <!-- Fila de Totales Anuales -->
-<table>
-    <thead>
-        <tr>
-            <th colspan="6">Descripción</th>
-            <th>Tiempo Total Hoja</th>
-            <th></th>
-            <th></th>
-            <th>Tiempo Total Operativo</th>
-            <th>Exceso de Minutos</th>
-            <th></th>
-            <th>Total Viajeros</th>
-            <th>Billetes Vendidos</th>
-            <th>Liquidación Total (€)</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tfoot>
-        <tr>
-            <td colspan="6">Total Anual</td>
-            <td id="totalAnualTiempoHoja">00:00</td>
-            <td></td>
-            <td></td>
-            <td id="totalAnualTiempoOperativo">00:00</td>
-            <td id="totalAnualExcesoMinutos">00:00</td>
-            <td></td>
-            <td id="totalAnualViajeros">0</td>
-            <td id="totalAnualBilletesVendidos">0</td>
-            <td id="totalAnualLiquidacion">0.00</td>
-            <td></td>
-        </tr>
-    </tfoot>
-</table>
+        <table>
+            <thead>
+                <tr>
+                    <th colspan="6">Descripción</th>
+                    <th>Tiempo Total Hoja</th>
+                    <th></th>
+                    <th></th>
+                    <th>Tiempo Total Operativo</th>
+                    <th>Exceso de Minutos</th>
+                    <th></th>
+                    <th>Total Viajeros</th>
+                    <th>Billetes Vendidos</th>
+                    <th>Liquidación Total (€)</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tfoot>
+                <tr>
+                    <td colspan="6">Total Anual</td>
+                    <td id="totalAnualTiempoHoja">00:00</td>
+                    <td></td>
+                    <td></td>
+                    <td id="totalAnualTiempoOperativo">00:00</td>
+                    <td id="totalAnualExcesoMinutos">00:00</td>
+                    <td></td>
+                    <td id="totalAnualViajeros">0</td>
+                    <td id="totalAnualBilletesVendidos">0</td>
+                    <td id="totalAnualLiquidacion">0.00</td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
 
     <!-- Coloca el script al final del body -->
     <script src="script.js"></script>
