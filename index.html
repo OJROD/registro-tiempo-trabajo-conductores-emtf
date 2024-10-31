@@ -156,24 +156,39 @@
         <div id="tablasMensuales"></div>
 
         <!-- Fila de Totales Anuales -->
-        <table>
-            <tfoot>
-                <tr>
-                    <td colspan="6">Total Anual</td>
-                    <td id="totalAnualTiempoHoja">00:00</td>
-                    <td></td>
-                    <td></td>
-                    <td id="totalAnualTiempoOperativo">00:00</td>
-                    <td id="totalAnualExcesoMinutos">00:00</td>
-                    <td></td>
-                    <td id="totalAnualViajeros">0</td>
-                    <td id="totalAnualBilletesVendidos">0</td>
-                    <td id="totalAnualLiquidacion">0.00</td>
-                    <td></td>
-                </tr>
-            </tfoot>
-        </table>
-    </div>
+       <!-- Fila de Totales Anuales -->
+<table>
+    <thead>
+        <tr>
+            <th colspan="6">Descripción</th>
+            <th>Tiempo Total Hoja</th>
+            <th></th>
+            <th></th>
+            <th>Tiempo Total Operativo</th>
+            <th>Exceso de Minutos</th>
+            <th></th>
+            <th>Total Viajeros</th>
+            <th>Billetes Vendidos</th>
+            <th>Liquidación Total (€)</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tfoot>
+        <tr>
+            <td colspan="6">Total Anual</td>
+            <td id="totalAnualTiempoHoja">00:00</td>
+            <td></td>
+            <td></td>
+            <td id="totalAnualTiempoOperativo">00:00</td>
+            <td id="totalAnualExcesoMinutos">00:00</td>
+            <td></td>
+            <td id="totalAnualViajeros">0</td>
+            <td id="totalAnualBilletesVendidos">0</td>
+            <td id="totalAnualLiquidacion">0.00</td>
+            <td></td>
+        </tr>
+    </tfoot>
+</table>
 
     <!-- Coloca el script al final del body -->
     <script src="script.js"></script>
