@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Control de Tiempos Conductores EMT Fuenlabrada</title>
+    <style>
+        /* Estilos generales */
+        body {
+            background-image: url('fondo_autobus.jpg');
+            background-size: cover;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.95);
+            margin: 20px auto;
+            padding: 20px;
+            max-width: 1200px;
+            border-radius: 10px;
+        }
+        h1 {
+            text-align: center;
+            color: #c40000;
+            margin-bottom: 20px;
+        }
+        /* Estilos del formulario */
+        form {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        label {
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+        .buttons {
+            grid-column: span 4;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .buttons button {
+            margin: 5px;
+            padding: 10px 20px;
+            background-color: #c40000;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .buttons button:hover {
+            background-color: #a00000;
+        }
+        /* Estilos de las tablas */
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        table, th, td {
+            border: 1px solid #c40000;
+        }
+        th {
+            background-color: #c40000;
+            color: white;
+            padding: 10px;
+        }
+        td {
+            padding: 8px;
+            text-align: center;
+        }
+        tfoot {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        /* Estilos para separar las tablas mensuales */
+        .monthly-table {
+            margin-bottom: 40px;
+        }
+        .monthly-table h2 {
+            text-align: center;
+            color: #c40000;
+            margin-top: 20px;
+        }
+        /* Responsive */
+        @media (max-width: 768px) {
+            form {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .buttons {
+                grid-column: span 2;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Control de Tiempos Conductores EMT Fuenlabrada</h1>
+        <form id="registroForm">
+            <!-- (Contenido del formulario) -->
+            <!-- Fila 1 -->
+            <label for="fecha">Fecha:</label>
+            <input type="date" id="fecha" required>
+
+            <label for="numeroConductor">Número de Conductor:</label>
+            <input type="number" id="numeroConductor" required>
+
+            <label for="linea">Línea:</label>
+            <input type="text" id="linea" required>
+
+            <label for="numeroTurno">Número de Turno:</label>
+            <input type="number" id="numeroTurno" required>
+
+            <!-- Fila 2 -->
+            <label for="horaInicio">Hora de Inicio (Hoja de Servicios):</label>
+            <input type="time" id="horaInicio" required>
+
+            <label for="horaFin">Hora de Fin (Hoja de Servicios):</label>
+            <input type="time" id="horaFin" required>
+
+            <label for="loginExp">Login en Máquina Expendedora:</label>
+            <input type="time" id="loginExp" required>
+
+            <label for="logoutExp">Logout en Máquina Expendedora:</label>
+            <input type="time" id="logoutExp" required>
+
+            <!-- Fila 3 -->
+            <label for="numeroAutobus">Número de Autobús:</label>
+            <input type="text" id="numeroAutobus" required>
+
+            <label for="totalViajeros">Número Total de Viajeros:</label>
+            <input type="number" id="totalViajeros" required>
+
+            <label for="billetesVendidos">Número de Billetes Vendidos:</label>
+            <input type="number" id="billetesVendidos" required>
+
+            <label for="observaciones">Observaciones:</label>
+            <textarea id="observaciones" rows="2"></textarea>
+
+            <!-- Botones -->
+            <div class="buttons">
+                <button type="button" id="guardarBtn">Guardar Registro</button>
+                <button type="reset">Limpiar Formulario</button>
+                <button type="button" id="diaLibreBtn">Día Libre</button>
+                <button type="button" id="exportarBtn">Guardar en Excel (CSV)</button>
+            </div>
+        </form>
+
+        <!-- Contenedor para las tablas mensuales -->
+        <div id="tablasMensuales"></div>
+
+        <!-- Fila de Totales Anuales -->
+        <table>
+            <tfoot>
+                <tr>
+                    <td colspan="6">Total Anual</td>
+                    <td id="totalAnualTiempoHoja">00:00</td>
+                    <td></td>
+                    <td></td>
+                    <td id="totalAnualTiempoOperativo">00:00</td>
+                    <td id="totalAnualExcesoMinutos">00:00</td>
+                    <td></td>
+                    <td id="totalAnualViajeros">0</td>
+                    <td id="totalAnualBilletesVendidos">0</td>
+                    <td id="totalAnualLiquidacion">0.00</td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <!-- Coloca el script al final del body -->
+    <script src="script.js"></script>
+</body>
+</html>
