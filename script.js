@@ -38,7 +38,7 @@ function guardarRegistro() {
     // Cálculos automáticos
     registro.tiempoTotalHoja = calcularDiferenciaHoras(registro.horaInicio, registro.horaFin);
     registro.tiempoTotalOperativo = calcularDiferenciaHoras(registro.loginExp, registro.logoutExp);
-    registro.excesoMinutos = calcularExcesoMinutos(registro.horaFin, registro.logoutExp);
+    registro.excesoJornada = calcularExcesoMinutos(registro.horaFin, registro.logoutExp);
     registro.liquidacionTotal = (registro.billetesVendidos * 1.30).toFixed(2);
 
     // Verificar si ya existe un registro para esa fecha
@@ -103,7 +103,7 @@ function actualizarTabla() {
                 registrosPorMes: {},
                 totalAnualTiempoHoja: 0,
                 totalAnualTiempoOperativo: 0,
-                totalAnualExcesoMinutos: 0,
+                totalAnualExcesoJornada: 0,
                 totalAnualViajeros: 0,
                 totalAnualBilletesVendidos: 0,
                 totalAnualLiquidacion: 0
@@ -121,11 +121,11 @@ function actualizarTabla() {
         // Acumulación de totales anuales
         const tiempoHojaMinutos = convertirATotalMinutos(registro.tiempoTotalHoja);
         const tiempoOperativoMinutos = convertirATotalMinutos(registro.tiempoTotalOperativo);
-        const excesoMinutos = convertirATotalMinutos(registro.excesoMinutos);
+        const excesoJornadaMinutos = convertirATotalMinutos(registro.excesoJornada);
 
         registrosAno.totalAnualTiempoHoja += tiempoHojaMinutos;
         registrosAno.totalAnualTiempoOperativo += tiempoOperativoMinutos;
-        registrosAno.totalAnualExcesoMinutos += excesoMinutos;
+        registrosAno.totalAnualExcesoJornada += excesoJornadaMinutos;
         registrosAno.totalAnualViajeros += registro.totalViajeros;
         registrosAno.totalAnualBilletesVendidos += registro.billetesVendidos;
         registrosAno.totalAnualLiquidacion += parseFloat(registro.liquidacionTotal);
@@ -152,7 +152,7 @@ function actualizarTabla() {
             // Calcular totales mensuales
             let totalMensualTiempoHoja = 0;
             let totalMensualTiempoOperativo = 0;
-            let totalMensualExcesoMinutos = 0;
+            let totalMensualExcesoJornada = 0;
             let totalMensualViajeros = 0;
             let totalMensualBilletesVendidos = 0;
             let totalMensualLiquidacion = 0;
@@ -160,11 +160,11 @@ function actualizarTabla() {
             registrosMes.forEach(registro => {
                 const tiempoHojaMinutos = convertirATotalMinutos(registro.tiempoTotalHoja);
                 const tiempoOperativoMinutos = convertirATotalMinutos(registro.tiempoTotalOperativo);
-                const excesoMinutos = convertirATotalMinutos(registro.excesoMinutos);
+                const excesoJornadaMinutos = convertirATotalMinutos(registro.excesoJornada);
 
                 totalMensualTiempoHoja += tiempoHojaMinutos;
                 totalMensualTiempoOperativo += tiempoOperativoMinutos;
-                totalMensualExcesoMinutos += excesoMinutos;
+                totalMensualExcesoJornada += excesoJornadaMinutos;
                 totalMensualViajeros += registro.totalViajeros;
                 totalMensualBilletesVendidos += registro.billetesVendidos;
                 totalMensualLiquidacion += parseFloat(registro.liquidacionTotal);
@@ -192,7 +192,7 @@ function actualizarTabla() {
                             <th>Login Exp</th>
                             <th>Logout Exp</th>
                             <th>Tiempo Total Operativo</th>
-                            <th>Exceso de Minutos</th>
+                            <th>Exceso de Jornada</th>
                             <th>N° Autobús</th>
                             <th>Total Viajeros</th>
                             <th>Billetes Vendidos</th>
@@ -208,7 +208,7 @@ function actualizarTabla() {
                             <td></td>
                             <td></td>
                             <td>${convertirAHorasMinutos(totalMensualTiempoOperativo)}</td>
-                            <td>${convertirAHorasMinutos(totalMensualExcesoMinutos)}</td>
+                            <td>${convertirAHorasMinutos(totalMensualExcesoJornada)}</td>
                             <td></td>
                             <td>${totalMensualViajeros}</td>
                             <td>${totalMensualBilletesVendidos}</td>
@@ -237,7 +237,7 @@ function actualizarTabla() {
                     <td>${registro.loginExp}</td>
                     <td>${registro.logoutExp}</td>
                     <td>${registro.tiempoTotalOperativo}</td>
-                    <td>${registro.excesoMinutos}</td>
+                    <td>${registro.excesoJornada}</td>
                     <td>${registro.numeroAutobus}</td>
                     <td>${registro.totalViajeros}</td>
                     <td>${registro.billetesVendidos}</td>
@@ -245,12 +245,12 @@ function actualizarTabla() {
                     <td>${registro.observaciones}</td>
                 `;
 
-                // Verificar si hay exceso de minutos
-                if (registro.excesoMinutos !== '00:00') {
+                // Verificar si hay exceso de jornada
+                if (registro.excesoJornada !== '00:00') {
                     const celdas = row.getElementsByTagName('td');
-                    const celdaExcesoMinutos = celdas[10];
-                    celdaExcesoMinutos.style.backgroundColor = 'yellow';
-                    celdaExcesoMinutos.style.fontWeight = 'bold';
+                    const celdaExcesoJornada = celdas[10];
+                    celdaExcesoJornada.style.backgroundColor = 'yellow';
+                    celdaExcesoJornada.style.fontWeight = 'bold';
                 }
 
                 // Si es día libre, pintar la fila de azul claro
@@ -281,7 +281,7 @@ function actualizarTabla() {
                     <th></th>
                     <th></th>
                     <th>Tiempo Total Operativo</th>
-                    <th>Exceso de Minutos</th>
+                    <th>Exceso de Jornada</th>
                     <th></th>
                     <th>Total Viajeros</th>
                     <th>Billetes Vendidos</th>
@@ -296,7 +296,7 @@ function actualizarTabla() {
                     <td></td>
                     <td></td>
                     <td>${convertirAHorasMinutos(registrosAno.totalAnualTiempoOperativo)}</td>
-                    <td>${convertirAHorasMinutos(registrosAno.totalAnualExcesoMinutos)}</td>
+                    <td>${convertirAHorasMinutos(registrosAno.totalAnualExcesoJornada)}</td>
                     <td></td>
                     <td>${registrosAno.totalAnualViajeros}</td>
                     <td>${registrosAno.totalAnualBilletesVendidos}</td>
@@ -338,7 +338,7 @@ function calcularDiferenciaHoras(inicio, fin) {
     return `${pad(horas)}:${pad(minutos)}`;
 }
 
-// Función para calcular exceso de minutos
+// Función para calcular exceso de jornada
 function calcularExcesoMinutos(horaFinHoja, logoutExp) {
     if (!horaFinHoja || !logoutExp) return '00:00';
     const [finHojaHoras, finHojaMinutos] = horaFinHoja.split(':').map(Number);
@@ -394,20 +394,20 @@ function actualizarCamposCalculados() {
     // Recalcular los campos
     const tiempoTotalHoja = calcularDiferenciaHoras(horaInicio, horaFin);
     const tiempoTotalOperativo = calcularDiferenciaHoras(loginExp, logoutExp);
-    const excesoMinutos = calcularExcesoMinutos(horaFin, logoutExp);
+    const excesoJornada = calcularExcesoMinutos(horaFin, logoutExp);
     const liquidacionTotal = (billetesVendidos * 1.30).toFixed(2);
 
     // Actualizar los campos en el formulario
     document.getElementById('tiempoTotalHoja').value = tiempoTotalHoja;
     document.getElementById('tiempoTotalOperativo').value = tiempoTotalOperativo;
-    document.getElementById('excesoMinutos').value = excesoMinutos;
+    document.getElementById('excesoJornada').value = excesoJornada;
     document.getElementById('liquidacionTotal').value = liquidacionTotal;
 }
 
 // Función para exportar a CSV
 function exportarCSV(registrosAExportar, nombreArchivo) {
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Fecha,Número de Conductor,Línea,Número de Turno,Hora Inicio Hoja,Hora Fin Hoja,Tiempo Total Hoja,Login Exp,Logout Exp,Tiempo Total Operativo,Exceso de Minutos,Número de Autobús,Número Total de Viajeros,Número de Billetes Vendidos,Liquidación Total (€),Observaciones\n";
+    csvContent += "Fecha,Número de Conductor,Línea,Número de Turno,Hora Inicio Hoja,Hora Fin Hoja,Tiempo Total Hoja,Login Exp,Logout Exp,Tiempo Total Operativo,Exceso de Jornada,Número de Autobús,Número Total de Viajeros,Número de Billetes Vendidos,Liquidación Total (€),Observaciones\n";
 
     registrosAExportar.forEach(registro => {
         const row = [
@@ -421,7 +421,7 @@ function exportarCSV(registrosAExportar, nombreArchivo) {
             registro.loginExp,
             registro.logoutExp,
             registro.tiempoTotalOperativo,
-            registro.excesoMinutos,
+            registro.excesoJornada,
             registro.numeroAutobus,
             registro.totalViajeros,
             registro.billetesVendidos,
