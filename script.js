@@ -11,7 +11,7 @@ function actualizarRegistrosAntiguos() {
             delete registro.excesoMinutos;
             registrosActualizados = true;
         }
-        // Si ambos campos están indefinidos, inicializamos 'excesoJornada' a '00:00'
+        // Si 'excesoJornada' está indefinido, inicializamos a '00:00'
         if (registro.excesoJornada === undefined) {
             registro.excesoJornada = '00:00';
             registrosActualizados = true;
@@ -273,7 +273,7 @@ function actualizarTabla() {
                     <td>${registro.observaciones}</td>
                 `;
 
-                // Verificar si hay exceso de jornada y el valor no es 'undefined' o vacío
+                // Verificar si hay exceso de jornada y el valor no es '00:00' o vacío
                 if (registro.excesoJornada && registro.excesoJornada !== '00:00') {
                     const celdas = row.getElementsByTagName('td');
                     const celdaExcesoJornada = celdas[10];
@@ -377,7 +377,7 @@ function calcularExcesoJornada(horaFinHoja, logoutExp) {
 
     // Ajustar si logout es después de medianoche
     if (logoutTotalMinutos < finHojaTotalMinutos) {
-        logoutTotalMinutos += 1440;
+        logoutTotalMinutos += 1440; // Añade 24 horas si logout es después de medianoche
     }
 
     // Si logoutTotalMinutos es mayor que finHojaTotalMinutos
