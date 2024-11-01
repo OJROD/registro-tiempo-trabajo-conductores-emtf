@@ -1,6 +1,30 @@
 // Arreglo para almacenar los registros
 let registros = JSON.parse(localStorage.getItem('registros')) || [];
 
+// Función para actualizar registros antiguos
+function actualizarRegistrosAntiguos() {
+    let registrosActualizados = false;
+    registros.forEach(registro => {
+        // Si el registro tiene 'excesoMinutos' y no tiene 'excesoJornada', actualizamos
+        if (registro.excesoMinutos !== undefined && registro.excesoJornada === undefined) {
+            registro.excesoJornada = registro.excesoMinutos;
+            delete registro.excesoMinutos;
+            registrosActualizados = true;
+        }
+        // Si ambos campos están indefinidos, inicializamos 'excesoJornada' a '00:00'
+        if (registro.excesoJornada === undefined) {
+            registro.excesoJornada = '00:00';
+            registrosActualizados = true;
+        }
+    });
+    if (registrosActualizados) {
+        localStorage.setItem('registros', JSON.stringify(registros));
+    }
+}
+
+// Llamar a la función para actualizar registros antiguos
+actualizarRegistrosAntiguos();
+
 // Referencias a los elementos del DOM
 const guardarBtn = document.getElementById('guardarBtn');
 const diaLibreBtn = document.getElementById('diaLibreBtn');
@@ -38,7 +62,7 @@ function guardarRegistro() {
     // Cálculos automáticos
     registro.tiempoTotalHoja = calcularDiferenciaHoras(registro.horaInicio, registro.horaFin);
     registro.tiempoTotalOperativo = calcularDiferenciaHoras(registro.loginExp, registro.logoutExp);
-    registro.excesoJornada = calcularExcesoMinutos(registro.horaFin, registro.logoutExp);
+    registro.excesoJornada = calcularExcesoJornada(registro.horaFin, registro.logoutExp);
     registro.liquidacionTotal = (registro.billetesVendidos * 1.30).toFixed(2);
 
     // Verificar si ya existe un registro para esa fecha
@@ -52,7 +76,6 @@ function guardarRegistro() {
     // Guardar en localStorage
     localStorage.setItem('registros', JSON.stringify(registros));
     actualizarTabla();
-    // document.getElementById('registroForm').reset(); // Comentada para mantener los datos
     actualizarCamposCalculados(); // Actualizar los campos calculados en el formulario
 }
 
@@ -114,6 +137,11 @@ function actualizarTabla() {
 
         if (!registrosAno.registrosPorMes[mes]) {
             registrosAno.registrosPorMes[mes] = [];
+        }
+
+        // Asegurarse de que excesoJornada esté definido
+        if (registro.excesoJornada === undefined) {
+            registro.excesoJornada = '00:00';
         }
 
         registrosAno.registrosPorMes[mes].push(registro);
@@ -237,7 +265,7 @@ function actualizarTabla() {
                     <td>${registro.loginExp}</td>
                     <td>${registro.logoutExp}</td>
                     <td>${registro.tiempoTotalOperativo}</td>
-                    <td>${registro.excesoJornada}</td>
+                    <td>${registro.excesoJornada || '00:00'}</td>
                     <td>${registro.numeroAutobus}</td>
                     <td>${registro.totalViajeros}</td>
                     <td>${registro.billetesVendidos}</td>
@@ -245,8 +273,8 @@ function actualizarTabla() {
                     <td>${registro.observaciones}</td>
                 `;
 
-                // Verificar si hay exceso de jornada
-                if (registro.excesoJornada !== '00:00') {
+                // Verificar si hay exceso de jornada y el valor no es 'undefined' o vacío
+                if (registro.excesoJornada && registro.excesoJornada !== '00:00') {
                     const celdas = row.getElementsByTagName('td');
                     const celdaExcesoJornada = celdas[10];
                     celdaExcesoJornada.style.backgroundColor = 'yellow';
@@ -254,7 +282,7 @@ function actualizarTabla() {
                 }
 
                 // Si es día libre, pintar la fila de azul claro
-                if (registro.observaciones.toUpperCase().includes('DÍA LIBRE') || registro.observaciones.toUpperCase().includes('DIA LIBRE')) {
+                if (registro.observaciones && (registro.observaciones.toUpperCase().includes('DÍA LIBRE') || registro.observaciones.toUpperCase().includes('DIA LIBRE'))) {
                     row.style.backgroundColor = '#add8e6'; // Color azul claro
                 }
 
@@ -338,8 +366,8 @@ function calcularDiferenciaHoras(inicio, fin) {
     return `${pad(horas)}:${pad(minutos)}`;
 }
 
-// Función para calcular exceso de jornada
-function calcularExcesoMinutos(horaFinHoja, logoutExp) {
+// Función para calcular exceso de jornada según la especificación
+function calcularExcesoJornada(horaFinHoja, logoutExp) {
     if (!horaFinHoja || !logoutExp) return '00:00';
     const [finHojaHoras, finHojaMinutos] = horaFinHoja.split(':').map(Number);
     const [logoutHoras, logoutMinutos] = logoutExp.split(':').map(Number);
@@ -347,15 +375,14 @@ function calcularExcesoMinutos(horaFinHoja, logoutExp) {
     let finHojaTotalMinutos = finHojaHoras * 60 + finHojaMinutos;
     let logoutTotalMinutos = logoutHoras * 60 + logoutMinutos;
 
-    let diff = logoutTotalMinutos - finHojaTotalMinutos;
-
-    if (diff < -720) {
-        // Si la diferencia es muy negativa, significa que el logout es después de medianoche
-        logoutTotalMinutos += 1440; // Añade 24 horas
-        diff = logoutTotalMinutos - finHojaTotalMinutos;
+    // Ajustar si logout es después de medianoche
+    if (logoutTotalMinutos < finHojaTotalMinutos) {
+        logoutTotalMinutos += 1440;
     }
 
-    if (diff > 0) {
+    // Si logoutTotalMinutos es mayor que finHojaTotalMinutos
+    if (logoutTotalMinutos > finHojaTotalMinutos) {
+        const diff = logoutTotalMinutos - finHojaTotalMinutos;
         const horas = Math.floor(diff / 60);
         const minutos = diff % 60;
         return `${pad(horas)}:${pad(minutos)}`;
@@ -371,7 +398,7 @@ function pad(num) {
 
 // Funciones de conversión
 function convertirATotalMinutos(horaMinuto) {
-    if (!horaMinuto) return 0;
+    if (!horaMinuto || horaMinuto === 'undefined') return 0;
     const [horas, minutos] = horaMinuto.split(':').map(Number);
     return horas * 60 + minutos;
 }
@@ -394,7 +421,7 @@ function actualizarCamposCalculados() {
     // Recalcular los campos
     const tiempoTotalHoja = calcularDiferenciaHoras(horaInicio, horaFin);
     const tiempoTotalOperativo = calcularDiferenciaHoras(loginExp, logoutExp);
-    const excesoJornada = calcularExcesoMinutos(horaFin, logoutExp);
+    const excesoJornada = calcularExcesoJornada(horaFin, logoutExp);
     const liquidacionTotal = (billetesVendidos * 1.30).toFixed(2);
 
     // Actualizar los campos en el formulario
@@ -421,7 +448,7 @@ function exportarCSV(registrosAExportar, nombreArchivo) {
             registro.loginExp,
             registro.logoutExp,
             registro.tiempoTotalOperativo,
-            registro.excesoJornada,
+            registro.excesoJornada || '00:00',
             registro.numeroAutobus,
             registro.totalViajeros,
             registro.billetesVendidos,
@@ -439,7 +466,7 @@ function exportarCSV(registrosAExportar, nombreArchivo) {
     document.body.removeChild(link);
 }
 
-// Escuchar cambios en los campos relevantes para actualizar los cálculos en tiempo real (opcional)
+// Escuchar cambios en los campos relevantes para actualizar los cálculos en tiempo real
 const camposParaEscuchar = ['horaInicio', 'horaFin', 'loginExp', 'logoutExp', 'billetesVendidos'];
 camposParaEscuchar.forEach(campoId => {
     document.getElementById(campoId).addEventListener('input', actualizarCamposCalculados);
