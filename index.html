@@ -82,7 +82,7 @@
             background-color: #f2f2f2;
             font-weight: bold;
         }
-        /* Estilos para separar las tablas mensuales */
+        /* Estilos para separar las tablas mensuales y anuales */
         .monthly-table {
             margin-bottom: 40px;
         }
@@ -90,6 +90,15 @@
             text-align: center;
             color: #c40000;
             margin-top: 20px;
+        }
+        .year-container {
+            margin-bottom: 60px;
+        }
+        .year-container h1 {
+            text-align: center;
+            color: #c40000;
+            margin-top: 40px;
+            margin-bottom: 20px;
         }
         /* Responsive */
         @media (max-width: 768px) {
@@ -163,46 +172,11 @@
                 <button type="button" id="guardarBtn">Guardar Registro</button>
                 <button type="reset">Limpiar Formulario</button>
                 <button type="button" id="diaLibreBtn">Día Libre</button>
-                <button type="button" id="exportarBtn">Guardar en Excel (CSV)</button>
             </div>
         </form>
 
-        <!-- Contenedor para las tablas mensuales -->
+        <!-- Contenedor para las tablas anuales y mensuales -->
         <div id="tablasMensuales"></div>
-
-        <!-- Fila de Totales Anuales -->
-        <table>
-            <thead>
-                <tr>
-                    <th colspan="6">Descripción</th>
-                    <th>Tiempo Total Hoja</th>
-                    <th></th>
-                    <th></th>
-                    <th>Tiempo Total Operativo</th>
-                    <th>Exceso de Minutos</th>
-                    <th></th>
-                    <th>Total Viajeros</th>
-                    <th>Billetes Vendidos</th>
-                    <th>Liquidación Total (€)</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tfoot>
-                <tr>
-                    <td colspan="6">Total Anual</td>
-                    <td id="totalAnualTiempoHoja">00:00</td>
-                    <td></td>
-                    <td></td>
-                    <td id="totalAnualTiempoOperativo">00:00</td>
-                    <td id="totalAnualExcesoMinutos">00:00</td>
-                    <td></td>
-                    <td id="totalAnualViajeros">0</td>
-                    <td id="totalAnualBilletesVendidos">0</td>
-                    <td id="totalAnualLiquidacion">0.00</td>
-                    <td></td>
-                </tr>
-            </tfoot>
-        </table>
     </div>
 
     <!-- Coloca el script al final del body -->
