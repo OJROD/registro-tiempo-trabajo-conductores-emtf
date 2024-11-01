@@ -33,6 +33,12 @@ const diaLibreBtn = document.getElementById('diaLibreBtn');
 guardarBtn.addEventListener('click', guardarRegistro);
 diaLibreBtn.addEventListener('click', diaLibre);
 
+// Escuchar cambios en los campos relevantes para actualizar los cálculos en tiempo real
+const camposParaEscuchar = ['horaInicio', 'horaFin', 'loginExp', 'logoutExp', 'billetesVendidos'];
+camposParaEscuchar.forEach(campoId => {
+    document.getElementById(campoId).addEventListener('input', actualizarCamposCalculados);
+});
+
 // Inicializar la tabla al cargar la página
 actualizarTabla();
 
@@ -106,6 +112,28 @@ function diaLibre() {
 
     // Guardar el registro
     guardarRegistro();
+}
+
+// Función para actualizar los campos calculados en el formulario
+function actualizarCamposCalculados() {
+    // Obtener los valores actuales del formulario
+    const horaInicio = document.getElementById('horaInicio').value || '00:00';
+    const horaFin = document.getElementById('horaFin').value || '00:00';
+    const loginExp = document.getElementById('loginExp').value || '00:00';
+    const logoutExp = document.getElementById('logoutExp').value || '00:00';
+    const billetesVendidos = parseInt(document.getElementById('billetesVendidos').value) || 0;
+
+    // Recalcular los campos
+    const tiempoTotalHoja = calcularDiferenciaHoras(horaInicio, horaFin);
+    const tiempoTotalOperativo = calcularDiferenciaHoras(loginExp, logoutExp);
+    const excesoJornada = calcularExcesoJornada(horaFin, logoutExp);
+    const liquidacionTotal = (billetesVendidos * 1.30).toFixed(2);
+
+    // Actualizar los campos en el formulario
+    document.getElementById('tiempoTotalHoja').value = tiempoTotalHoja;
+    document.getElementById('tiempoTotalOperativo').value = tiempoTotalOperativo;
+    document.getElementById('excesoJornada').value = excesoJornada;
+    document.getElementById('liquidacionTotal').value = liquidacionTotal;
 }
 
 // Función para actualizar las tablas
@@ -366,7 +394,7 @@ function calcularDiferenciaHoras(inicio, fin) {
     return `${pad(horas)}:${pad(minutos)}`;
 }
 
-// Función para calcular exceso de jornada según la especificación
+// Función para calcular exceso de jornada según la especificación corregida
 function calcularExcesoJornada(horaFinHoja, logoutExp) {
     if (!horaFinHoja || !logoutExp) return '00:00';
     const [finHojaHoras, finHojaMinutos] = horaFinHoja.split(':').map(Number);
@@ -375,14 +403,32 @@ function calcularExcesoJornada(horaFinHoja, logoutExp) {
     let finHojaTotalMinutos = finHojaHoras * 60 + finHojaMinutos;
     let logoutTotalMinutos = logoutHoras * 60 + logoutMinutos;
 
-    // Ajustar si logout es después de medianoche
-    if (logoutTotalMinutos < finHojaTotalMinutos) {
-        logoutTotalMinutos += 1440; // Añade 24 horas si logout es después de medianoche
-    }
+    let diff = logoutTotalMinutos - finHojaTotalMinutos;
 
-    // Si logoutTotalMinutos es mayor que finHojaTotalMinutos
-    if (logoutTotalMinutos > finHojaTotalMinutos) {
-        const diff = logoutTotalMinutos - finHojaTotalMinutos;
+    if (diff >= 0) {
+        // Logout es después de la hora fin
+        return formatDiff(diff);
+    } else {
+        // diff < 0
+        if (Math.abs(diff) > 720) {
+            // Posible cruce de medianoche
+            logoutTotalMinutos += 1440; // Añade 24 horas
+            diff = logoutTotalMinutos - finHojaTotalMinutos;
+            if (diff >= 0) {
+                return formatDiff(diff);
+            } else {
+                return '00:00';
+            }
+        } else {
+            // Logout es antes de la hora fin, no hay exceso de jornada
+            return '00:00';
+        }
+    }
+}
+
+// Función para formatear la diferencia en formato HH:MM
+function formatDiff(diff) {
+    if (diff > 0) {
         const horas = Math.floor(diff / 60);
         const minutos = diff % 60;
         return `${pad(horas)}:${pad(minutos)}`;
@@ -407,28 +453,6 @@ function convertirAHorasMinutos(totalMinutos) {
     const horas = Math.floor(totalMinutos / 60);
     const minutos = totalMinutos % 60;
     return `${pad(horas)}:${pad(minutos)}`;
-}
-
-// Función para actualizar los campos calculados en el formulario
-function actualizarCamposCalculados() {
-    // Obtener los valores actuales del formulario
-    const horaInicio = document.getElementById('horaInicio').value || '00:00';
-    const horaFin = document.getElementById('horaFin').value || '00:00';
-    const loginExp = document.getElementById('loginExp').value || '00:00';
-    const logoutExp = document.getElementById('logoutExp').value || '00:00';
-    const billetesVendidos = parseInt(document.getElementById('billetesVendidos').value) || 0;
-
-    // Recalcular los campos
-    const tiempoTotalHoja = calcularDiferenciaHoras(horaInicio, horaFin);
-    const tiempoTotalOperativo = calcularDiferenciaHoras(loginExp, logoutExp);
-    const excesoJornada = calcularExcesoJornada(horaFin, logoutExp);
-    const liquidacionTotal = (billetesVendidos * 1.30).toFixed(2);
-
-    // Actualizar los campos en el formulario
-    document.getElementById('tiempoTotalHoja').value = tiempoTotalHoja;
-    document.getElementById('tiempoTotalOperativo').value = tiempoTotalOperativo;
-    document.getElementById('excesoJornada').value = excesoJornada;
-    document.getElementById('liquidacionTotal').value = liquidacionTotal;
 }
 
 // Función para exportar a CSV
@@ -465,9 +489,3 @@ function exportarCSV(registrosAExportar, nombreArchivo) {
     link.click();
     document.body.removeChild(link);
 }
-
-// Escuchar cambios en los campos relevantes para actualizar los cálculos en tiempo real
-const camposParaEscuchar = ['horaInicio', 'horaFin', 'loginExp', 'logoutExp', 'billetesVendidos'];
-camposParaEscuchar.forEach(campoId => {
-    document.getElementById(campoId).addEventListener('input', actualizarCamposCalculados);
-});
