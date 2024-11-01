@@ -4,12 +4,10 @@ let registros = JSON.parse(localStorage.getItem('registros')) || [];
 // Referencias a los elementos del DOM
 const guardarBtn = document.getElementById('guardarBtn');
 const diaLibreBtn = document.getElementById('diaLibreBtn');
-const exportarBtn = document.getElementById('exportarBtn');
 
 // Asignación de eventos a los botones
 guardarBtn.addEventListener('click', guardarRegistro);
 diaLibreBtn.addEventListener('click', diaLibre);
-exportarBtn.addEventListener('click', exportarCSV);
 
 // Inicializar la tabla al cargar la página
 actualizarTabla();
@@ -60,11 +58,15 @@ function guardarRegistro() {
 
 // Función para Día Libre
 function diaLibre() {
-    document.getElementById('registroForm').reset();
-    document.getElementById('observaciones').value = 'DÍA LIBRE';
+    const fecha = document.getElementById('fecha').value;
+    const numeroConductor = document.getElementById('numeroConductor').value;
+
+    if (!fecha || !numeroConductor) {
+        alert('Por favor, ingresa la fecha y el número de conductor.');
+        return;
+    }
 
     // Asignar valores predeterminados
-    document.getElementById('numeroConductor').value = '0';
     document.getElementById('linea').value = 'DÍA LIBRE';
     document.getElementById('numeroTurno').value = '0';
     document.getElementById('horaInicio').value = '00:00';
@@ -74,12 +76,13 @@ function diaLibre() {
     document.getElementById('numeroAutobus').value = '0';
     document.getElementById('totalViajeros').value = 0;
     document.getElementById('billetesVendidos').value = 0;
+    document.getElementById('observaciones').value = 'DÍA LIBRE';
 
-    // Limpiar campos calculados
-    document.getElementById('tiempoTotalHoja').value = '';
-    document.getElementById('tiempoTotalOperativo').value = '';
-    document.getElementById('excesoMinutos').value = '';
-    document.getElementById('liquidacionTotal').value = '';
+    // Actualizar campos calculados
+    actualizarCamposCalculados();
+
+    // Guardar el registro
+    guardarRegistro();
 }
 
 // Función para actualizar las tablas
@@ -87,171 +90,227 @@ function actualizarTabla() {
     const contenedorTablas = document.getElementById('tablasMensuales');
     contenedorTablas.innerHTML = '';
 
-    let totalAnualTiempoHoja = 0;
-    let totalAnualTiempoOperativo = 0;
-    let totalAnualExcesoMinutos = 0;
-    let totalAnualViajeros = 0;
-    let totalAnualBilletesVendidos = 0;
-    let totalAnualLiquidacion = 0;
-
-    // Agrupar registros por mes y año
-    const registrosPorMes = {};
+    // Agrupar registros por año y mes
+    const registrosPorAno = {};
 
     registros.forEach(registro => {
         const fechaRegistro = new Date(registro.fecha);
         const mes = fechaRegistro.getMonth(); // 0-11
-        const año = fechaRegistro.getFullYear();
-        const claveMes = `${año}-${mes}`;
+        const ano = fechaRegistro.getFullYear();
 
-        if (!registrosPorMes[claveMes]) {
-            registrosPorMes[claveMes] = [];
+        if (!registrosPorAno[ano]) {
+            registrosPorAno[ano] = {
+                registrosPorMes: {},
+                totalAnualTiempoHoja: 0,
+                totalAnualTiempoOperativo: 0,
+                totalAnualExcesoMinutos: 0,
+                totalAnualViajeros: 0,
+                totalAnualBilletesVendidos: 0,
+                totalAnualLiquidacion: 0
+            };
         }
 
-        registrosPorMes[claveMes].push(registro);
+        const registrosAno = registrosPorAno[ano];
+
+        if (!registrosAno.registrosPorMes[mes]) {
+            registrosAno.registrosPorMes[mes] = [];
+        }
+
+        registrosAno.registrosPorMes[mes].push(registro);
 
         // Acumulación de totales anuales
         const tiempoHojaMinutos = convertirATotalMinutos(registro.tiempoTotalHoja);
         const tiempoOperativoMinutos = convertirATotalMinutos(registro.tiempoTotalOperativo);
         const excesoMinutos = convertirATotalMinutos(registro.excesoMinutos);
 
-        totalAnualTiempoHoja += tiempoHojaMinutos;
-        totalAnualTiempoOperativo += tiempoOperativoMinutos;
-        totalAnualExcesoMinutos += excesoMinutos;
-        totalAnualViajeros += registro.totalViajeros;
-        totalAnualBilletesVendidos += registro.billetesVendidos;
-        totalAnualLiquidacion += parseFloat(registro.liquidacionTotal);
+        registrosAno.totalAnualTiempoHoja += tiempoHojaMinutos;
+        registrosAno.totalAnualTiempoOperativo += tiempoOperativoMinutos;
+        registrosAno.totalAnualExcesoMinutos += excesoMinutos;
+        registrosAno.totalAnualViajeros += registro.totalViajeros;
+        registrosAno.totalAnualBilletesVendidos += registro.billetesVendidos;
+        registrosAno.totalAnualLiquidacion += parseFloat(registro.liquidacionTotal);
     });
 
-    // Obtener las claves de los meses y ordenarlas de más reciente a más antiguo
-    const mesesOrdenados = Object.keys(registrosPorMes).sort((a, b) => {
-        const [añoA, mesA] = a.split('-').map(Number);
-        const [añoB, mesB] = b.split('-').map(Number);
-        const fechaA = new Date(añoA, mesA);
-        const fechaB = new Date(añoB, mesB);
-        return fechaB - fechaA; // Orden descendente
-    });
+    // Obtener los años ordenados de más reciente a más antiguo
+    const anosOrdenados = Object.keys(registrosPorAno).sort((a, b) => b - a);
 
-    mesesOrdenados.forEach(claveMes => {
-        const registrosMes = registrosPorMes[claveMes];
+    anosOrdenados.forEach(ano => {
+        const registrosAno = registrosPorAno[ano];
+        const registrosPorMes = registrosAno.registrosPorMes;
 
-        // Calcular totales mensuales
-        let totalMensualTiempoHoja = 0;
-        let totalMensualTiempoOperativo = 0;
-        let totalMensualExcesoMinutos = 0;
-        let totalMensualViajeros = 0;
-        let totalMensualBilletesVendidos = 0;
-        let totalMensualLiquidacion = 0;
+        // Crear un contenedor para el año
+        const contenedorAno = document.createElement('div');
+        contenedorAno.classList.add('year-container');
+        contenedorAno.innerHTML = `<h1>${ano}</h1>`;
 
-        registrosMes.forEach(registro => {
-            const tiempoHojaMinutos = convertirATotalMinutos(registro.tiempoTotalHoja);
-            const tiempoOperativoMinutos = convertirATotalMinutos(registro.tiempoTotalOperativo);
-            const excesoMinutos = convertirATotalMinutos(registro.excesoMinutos);
+        // Obtener los meses ordenados de más reciente a más antiguo
+        const mesesOrdenados = Object.keys(registrosPorMes).sort((a, b) => b - a);
 
-            totalMensualTiempoHoja += tiempoHojaMinutos;
-            totalMensualTiempoOperativo += tiempoOperativoMinutos;
-            totalMensualExcesoMinutos += excesoMinutos;
-            totalMensualViajeros += registro.totalViajeros;
-            totalMensualBilletesVendidos += registro.billetesVendidos;
-            totalMensualLiquidacion += parseFloat(registro.liquidacionTotal);
-        });
+        mesesOrdenados.forEach(mes => {
+            const registrosMes = registrosPorMes[mes];
 
-        // Crear la tabla mensual
-        const tablaMensual = document.createElement('div');
-        tablaMensual.classList.add('monthly-table');
+            // Calcular totales mensuales
+            let totalMensualTiempoHoja = 0;
+            let totalMensualTiempoOperativo = 0;
+            let totalMensualExcesoMinutos = 0;
+            let totalMensualViajeros = 0;
+            let totalMensualBilletesVendidos = 0;
+            let totalMensualLiquidacion = 0;
 
-        const [año, mes] = claveMes.split('-').map(Number);
-        const nombreMes = obtenerNombreMes(mes);
+            registrosMes.forEach(registro => {
+                const tiempoHojaMinutos = convertirATotalMinutos(registro.tiempoTotalHoja);
+                const tiempoOperativoMinutos = convertirATotalMinutos(registro.tiempoTotalOperativo);
+                const excesoMinutos = convertirATotalMinutos(registro.excesoMinutos);
 
-        tablaMensual.innerHTML = `
-            <h2>${nombreMes} ${año}</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>N° Conductor</th>
-                        <th>Línea</th>
-                        <th>N° Turno</th>
-                        <th>Inicio (Hoja)</th>
-                        <th>Fin (Hoja)</th>
-                        <th>Tiempo Total Hoja</th>
-                        <th>Login Exp</th>
-                        <th>Logout Exp</th>
-                        <th>Tiempo Total Operativo</th>
-                        <th>Exceso de Minutos</th>
-                        <th>N° Autobús</th>
-                        <th>Total Viajeros</th>
-                        <th>Billetes Vendidos</th>
-                        <th>Liquidación Total (€)</th>
-                        <th>Observaciones</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="6">Total Mensual</td>
-                        <td>${convertirAHorasMinutos(totalMensualTiempoHoja)}</td>
-                        <td></td>
-                        <td></td>
-                        <td>${convertirAHorasMinutos(totalMensualTiempoOperativo)}</td>
-                        <td>${convertirAHorasMinutos(totalMensualExcesoMinutos)}</td>
-                        <td></td>
-                        <td>${totalMensualViajeros}</td>
-                        <td>${totalMensualBilletesVendidos}</td>
-                        <td>${totalMensualLiquidacion.toFixed(2)}</td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
-        `;
+                totalMensualTiempoHoja += tiempoHojaMinutos;
+                totalMensualTiempoOperativo += tiempoOperativoMinutos;
+                totalMensualExcesoMinutos += excesoMinutos;
+                totalMensualViajeros += registro.totalViajeros;
+                totalMensualBilletesVendidos += registro.billetesVendidos;
+                totalMensualLiquidacion += parseFloat(registro.liquidacionTotal);
+            });
 
-        const tbody = tablaMensual.querySelector('tbody');
+            // Crear la tabla mensual
+            const tablaMensual = document.createElement('div');
+            tablaMensual.classList.add('monthly-table');
 
-        // Ordenar los registros del mes por fecha descendente (más reciente primero)
-        registrosMes.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+            const nombreMes = obtenerNombreMes(mes);
 
-        registrosMes.forEach(registro => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${registro.fecha}</td>
-                <td>${registro.numeroConductor}</td>
-                <td>${registro.linea}</td>
-                <td>${registro.numeroTurno}</td>
-                <td>${registro.horaInicio}</td>
-                <td>${registro.horaFin}</td>
-                <td>${registro.tiempoTotalHoja}</td>
-                <td>${registro.loginExp}</td>
-                <td>${registro.logoutExp}</td>
-                <td>${registro.tiempoTotalOperativo}</td>
-                <td>${registro.excesoMinutos}</td>
-                <td>${registro.numeroAutobus}</td>
-                <td>${registro.totalViajeros}</td>
-                <td>${registro.billetesVendidos}</td>
-                <td>${registro.liquidacionTotal}</td>
-                <td>${registro.observaciones}</td>
+            tablaMensual.innerHTML = `
+                <h2>${nombreMes} ${ano}</h2>
+                <button class="exportar-mes-btn">Guardar en Excel (CSV)</button>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>N° Conductor</th>
+                            <th>Línea</th>
+                            <th>N° Turno</th>
+                            <th>Inicio (Hoja)</th>
+                            <th>Fin (Hoja)</th>
+                            <th>Tiempo Total Hoja</th>
+                            <th>Login Exp</th>
+                            <th>Logout Exp</th>
+                            <th>Tiempo Total Operativo</th>
+                            <th>Exceso de Minutos</th>
+                            <th>N° Autobús</th>
+                            <th>Total Viajeros</th>
+                            <th>Billetes Vendidos</th>
+                            <th>Liquidación Total (€)</th>
+                            <th>Observaciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="6">Total Mensual</td>
+                            <td>${convertirAHorasMinutos(totalMensualTiempoHoja)}</td>
+                            <td></td>
+                            <td></td>
+                            <td>${convertirAHorasMinutos(totalMensualTiempoOperativo)}</td>
+                            <td>${convertirAHorasMinutos(totalMensualExcesoMinutos)}</td>
+                            <td></td>
+                            <td>${totalMensualViajeros}</td>
+                            <td>${totalMensualBilletesVendidos}</td>
+                            <td>${totalMensualLiquidacion.toFixed(2)}</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
             `;
 
-            // Verificar si hay exceso de minutos
-            if (registro.excesoMinutos !== '00:00') {
-                const celdas = row.getElementsByTagName('td');
-                const celdaExcesoMinutos = celdas[10];
-                celdaExcesoMinutos.style.backgroundColor = 'yellow';
-                celdaExcesoMinutos.style.fontWeight = 'bold';
-            }
+            const tbody = tablaMensual.querySelector('tbody');
 
-            tbody.appendChild(row);
+            // Ordenar los registros del mes por fecha descendente (más reciente primero)
+            registrosMes.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+            registrosMes.forEach(registro => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${registro.fecha}</td>
+                    <td>${registro.numeroConductor}</td>
+                    <td>${registro.linea}</td>
+                    <td>${registro.numeroTurno}</td>
+                    <td>${registro.horaInicio}</td>
+                    <td>${registro.horaFin}</td>
+                    <td>${registro.tiempoTotalHoja}</td>
+                    <td>${registro.loginExp}</td>
+                    <td>${registro.logoutExp}</td>
+                    <td>${registro.tiempoTotalOperativo}</td>
+                    <td>${registro.excesoMinutos}</td>
+                    <td>${registro.numeroAutobus}</td>
+                    <td>${registro.totalViajeros}</td>
+                    <td>${registro.billetesVendidos}</td>
+                    <td>${registro.liquidacionTotal}</td>
+                    <td>${registro.observaciones}</td>
+                `;
+
+                // Verificar si hay exceso de minutos
+                if (registro.excesoMinutos !== '00:00') {
+                    const celdas = row.getElementsByTagName('td');
+                    const celdaExcesoMinutos = celdas[10];
+                    celdaExcesoMinutos.style.backgroundColor = 'yellow';
+                    celdaExcesoMinutos.style.fontWeight = 'bold';
+                }
+
+                // Si es día libre, pintar la fila de azul claro
+                if (registro.observaciones.toUpperCase().includes('DÍA LIBRE') || registro.observaciones.toUpperCase().includes('DIA LIBRE')) {
+                    row.style.backgroundColor = '#add8e6'; // Color azul claro
+                }
+
+                tbody.appendChild(row);
+            });
+
+            // Añadir evento al botón de exportar para este mes
+            const exportarMesBtn = tablaMensual.querySelector('.exportar-mes-btn');
+            exportarMesBtn.addEventListener('click', () => {
+                exportarCSV(registrosMes, `${nombreMes}_${ano}`);
+            });
+
+            // Añadir la tabla mensual al contenedor del año
+            contenedorAno.appendChild(tablaMensual);
         });
 
-        // Añadir la tabla mensual al contenedor
-        contenedorTablas.appendChild(tablaMensual);
-    });
+        // Añadir la tabla de totales anuales para este año
+        const tablaAnual = document.createElement('table');
+        tablaAnual.innerHTML = `
+            <thead>
+                <tr>
+                    <th colspan="6">Descripción</th>
+                    <th>Tiempo Total Hoja</th>
+                    <th></th>
+                    <th></th>
+                    <th>Tiempo Total Operativo</th>
+                    <th>Exceso de Minutos</th>
+                    <th></th>
+                    <th>Total Viajeros</th>
+                    <th>Billetes Vendidos</th>
+                    <th>Liquidación Total (€)</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tfoot>
+                <tr>
+                    <td colspan="6">Total Anual ${ano}</td>
+                    <td>${convertirAHorasMinutos(registrosAno.totalAnualTiempoHoja)}</td>
+                    <td></td>
+                    <td></td>
+                    <td>${convertirAHorasMinutos(registrosAno.totalAnualTiempoOperativo)}</td>
+                    <td>${convertirAHorasMinutos(registrosAno.totalAnualExcesoMinutos)}</td>
+                    <td></td>
+                    <td>${registrosAno.totalAnualViajeros}</td>
+                    <td>${registrosAno.totalAnualBilletesVendidos}</td>
+                    <td>${registrosAno.totalAnualLiquidacion.toFixed(2)}</td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        `;
 
-    // Actualizar totales anuales
-    document.getElementById('totalAnualTiempoHoja').textContent = convertirAHorasMinutos(totalAnualTiempoHoja);
-    document.getElementById('totalAnualTiempoOperativo').textContent = convertirAHorasMinutos(totalAnualTiempoOperativo);
-    document.getElementById('totalAnualExcesoMinutos').textContent = convertirAHorasMinutos(totalAnualExcesoMinutos);
-    document.getElementById('totalAnualViajeros').textContent = totalAnualViajeros;
-    document.getElementById('totalAnualBilletesVendidos').textContent = totalAnualBilletesVendidos;
-    document.getElementById('totalAnualLiquidacion').textContent = totalAnualLiquidacion.toFixed(2);
+        contenedorAno.appendChild(tablaAnual);
+
+        // Añadir el contenedor del año al contenedor principal
+        contenedorTablas.appendChild(contenedorAno);
+    });
 }
 
 // Función para obtener el nombre del mes
@@ -346,18 +405,11 @@ function actualizarCamposCalculados() {
 }
 
 // Función para exportar a CSV
-function exportarCSV() {
+function exportarCSV(registrosAExportar, nombreArchivo) {
     let csvContent = "data:text/csv;charset=utf-8,";
     csvContent += "Fecha,Número de Conductor,Línea,Número de Turno,Hora Inicio Hoja,Hora Fin Hoja,Tiempo Total Hoja,Login Exp,Logout Exp,Tiempo Total Operativo,Exceso de Minutos,Número de Autobús,Número Total de Viajeros,Número de Billetes Vendidos,Liquidación Total (€),Observaciones\n";
 
-    // Ordenar registros antes de exportar (más reciente primero)
-    registros.sort((a, b) => {
-        const fechaA = new Date(a.fecha);
-        const fechaB = new Date(b.fecha);
-        return fechaB - fechaA;
-    });
-
-    registros.forEach(registro => {
+    registrosAExportar.forEach(registro => {
         const row = [
             registro.fecha,
             registro.numeroConductor,
@@ -381,7 +433,7 @@ function exportarCSV() {
 
     const link = document.createElement("a");
     link.setAttribute("href", encodeURI(csvContent));
-    link.setAttribute("download", "registros.csv");
+    link.setAttribute("download", `${nombreArchivo}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
